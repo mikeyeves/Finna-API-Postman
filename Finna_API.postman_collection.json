@@ -1,0 +1,1547 @@
+{
+  "info": {
+    "_postman_id": "762b2ad5-1e4f-4c85-8d6d-80dd373008d8",
+    "name": "Finna API (Finland archives, libraries & museums)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Finna.fi REST API: a read-only search over records from about 400 Finnish archives, libraries and museums, including the **National Archives of Finland (KA)**, the Finnish Heritage Agency and SLS. No key is needed and CORS is open.\n\nDocs: https://api.finna.fi/swagger-ui/ · https://www.kiwi.fi/pages/viewpage.action?pageId=53839221 (terms of use apply)"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "item": [
+    {
+      "name": "★ Search",
+      "id": "f94ab7a9-85f5-489f-84af-0ced97b87de5",
+      "item": [
+        {
+          "name": "Search (all fields)",
+          "id": "e0c088ef-4280-44a2-8cae-96ecb7ac4845",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{finna_api}}/search?lookfor={{query}}&type=AllFields&limit=20&page=1&lng=en-gb&field[]=id&field[]=title&field[]=year&field[]=formats&field[]=buildings&field[]=images&field[]=urls&field[]=subjects&field[]=nonPresenterAuthors",
+              "host": [
+                "{{finna_api}}"
+              ],
+              "path": [
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "lookfor",
+                  "value": "{{query}}",
+                  "disabled": false,
+                  "description": "Search terms (Solr syntax: AND/OR/NOT, \"phrases\", wildcards*)"
+                },
+                {
+                  "key": "type",
+                  "value": "AllFields",
+                  "disabled": false,
+                  "description": "AllFields | Title | Author | Subject | …"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": false,
+                  "description": "0–100"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "sort",
+                  "value": "relevance",
+                  "disabled": true,
+                  "description": "relevance | main_date_str desc | main_date_str asc | title | author …"
+                },
+                {
+                  "key": "lng",
+                  "value": "en-gb",
+                  "disabled": false,
+                  "description": "fi | sv | en-gb | se"
+                },
+                {
+                  "key": "filter[]",
+                  "value": "",
+                  "disabled": true,
+                  "description": "e.g. format:\"0/Image/\" or building:\"0/KA/\""
+                },
+                {
+                  "key": "facet[]",
+                  "value": "",
+                  "disabled": true,
+                  "description": "e.g. format, building, language, author_facet"
+                },
+                {
+                  "key": "field[]",
+                  "value": "id",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "title",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "year",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "formats",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "buildings",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "images",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "urls",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "subjects",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "nonPresenterAuthors",
+                  "disabled": false,
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Main search across 20M+ records from Finnish archives, libraries and museums."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status OK',()=>{pm.expect(pm.response.code).to.eql(200);});",
+                  "let j={};try{j=pm.response.json();}catch(e){}",
+                  "const recs=j.records||[];",
+                  "const name=x=>Array.isArray(x)?x.map(v=>v.translated||v.value||v).join('; '):(x||'');",
+                  "const rows=recs.map(r=>[`<a href=\"https://www.finna.fi/Record/${encodeURIComponent(r.id)}\">${(r.title||r.heading||'').slice(0,110)}</a>`,r.year||'',name(r.formats),name(r.buildings),(r.images&&r.images.length)?`<img src=\"https://www.finna.fi${r.images[0]}\" height=\"50\">`:'']);",
+                  "let fac='';if(j.facets){for(const [k,v] of Object.entries(j.facets)){fac+=`<h4>${k}</h4><table>`+v.slice(0,40).map(f=>`<tr><td>${f.translated||f.value}</td><td><code>${f.value}</code></td><td>${f.count}</td></tr>`).join('')+'</table>';}}",
+                  "pm.visualizer.set(`<style>table{border-collapse:collapse;font:13px sans-serif;margin-bottom:12px}td,th{border:1px solid #ccc;padding:4px 8px;vertical-align:top}th{background:#eee}</style><p><b>{{count}}</b> results</p><table><tr><th>Title</th><th>Year</th><th>Format</th><th>Organisation</th><th>Image</th></tr>{{#each rows}}<tr>{{#each this}}<td>{{{this}}}</td>{{/each}}</tr>{{/each}}</table>{{{fac}}}`,{rows,count:j.resultCount,fac});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "★ National Archives of Finland (Kansallisarkisto, KA)",
+          "id": "27e424aa-b8d0-457e-9cb0-629a9c282413",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{finna_api}}/search?lookfor={{query}}&filter[]=building:\"0/KA/\"&limit=50&lng=en-gb&field[]=id&field[]=title&field[]=year&field[]=formats&field[]=buildings&field[]=images&field[]=urls&field[]=subjects&field[]=nonPresenterAuthors",
+              "host": [
+                "{{finna_api}}"
+              ],
+              "path": [
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "lookfor",
+                  "value": "{{query}}",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "filter[]",
+                  "value": "building:\"0/KA/\"",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "lng",
+                  "value": "en-gb",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "id",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "title",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "year",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "formats",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "buildings",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "images",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "urls",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "subjects",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "nonPresenterAuthors",
+                  "disabled": false,
+                  "description": ""
+                }
+              ]
+            },
+            "description": "About 2.1 million archival descriptions from the National Archives of Finland (Kansallisarkisto): parish, estate, court, military and emigration-related material. Digitized church books themselves are at digi.kansallisarkisto.fi and astia.narc.fi."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status OK',()=>{pm.expect(pm.response.code).to.eql(200);});",
+                  "let j={};try{j=pm.response.json();}catch(e){}",
+                  "const recs=j.records||[];",
+                  "const name=x=>Array.isArray(x)?x.map(v=>v.translated||v.value||v).join('; '):(x||'');",
+                  "const rows=recs.map(r=>[`<a href=\"https://www.finna.fi/Record/${encodeURIComponent(r.id)}\">${(r.title||r.heading||'').slice(0,110)}</a>`,r.year||'',name(r.formats),name(r.buildings),(r.images&&r.images.length)?`<img src=\"https://www.finna.fi${r.images[0]}\" height=\"50\">`:'']);",
+                  "let fac='';if(j.facets){for(const [k,v] of Object.entries(j.facets)){fac+=`<h4>${k}</h4><table>`+v.slice(0,40).map(f=>`<tr><td>${f.translated||f.value}</td><td><code>${f.value}</code></td><td>${f.count}</td></tr>`).join('')+'</table>';}}",
+                  "pm.visualizer.set(`<style>table{border-collapse:collapse;font:13px sans-serif;margin-bottom:12px}td,th{border:1px solid #ccc;padding:4px 8px;vertical-align:top}th{background:#eee}</style><p><b>{{count}}</b> results</p><table><tr><th>Title</th><th>Year</th><th>Format</th><th>Organisation</th><th>Image</th></tr>{{#each rows}}<tr>{{#each this}}<td>{{{this}}}</td>{{/each}}</tr>{{/each}}</table>{{{fac}}}`,{rows,count:j.resultCount,fac});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "★ Person as author/creator",
+          "id": "0ca2ec40-73e5-4023-abfe-d8302c51dfef",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{finna_api}}/search?lookfor={{person}}&type=Author&limit=50&lng=en-gb&field[]=id&field[]=title&field[]=year&field[]=formats&field[]=buildings&field[]=images&field[]=urls&field[]=subjects&field[]=nonPresenterAuthors",
+              "host": [
+                "{{finna_api}}"
+              ],
+              "path": [
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "lookfor",
+                  "value": "{{person}}",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "type",
+                  "value": "Author",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "lng",
+                  "value": "en-gb",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "id",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "title",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "year",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "formats",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "buildings",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "images",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "urls",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "subjects",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "nonPresenterAuthors",
+                  "disabled": false,
+                  "description": ""
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status OK',()=>{pm.expect(pm.response.code).to.eql(200);});",
+                  "let j={};try{j=pm.response.json();}catch(e){}",
+                  "const recs=j.records||[];",
+                  "const name=x=>Array.isArray(x)?x.map(v=>v.translated||v.value||v).join('; '):(x||'');",
+                  "const rows=recs.map(r=>[`<a href=\"https://www.finna.fi/Record/${encodeURIComponent(r.id)}\">${(r.title||r.heading||'').slice(0,110)}</a>`,r.year||'',name(r.formats),name(r.buildings),(r.images&&r.images.length)?`<img src=\"https://www.finna.fi${r.images[0]}\" height=\"50\">`:'']);",
+                  "let fac='';if(j.facets){for(const [k,v] of Object.entries(j.facets)){fac+=`<h4>${k}</h4><table>`+v.slice(0,40).map(f=>`<tr><td>${f.translated||f.value}</td><td><code>${f.value}</code></td><td>${f.count}</td></tr>`).join('')+'</table>';}}",
+                  "pm.visualizer.set(`<style>table{border-collapse:collapse;font:13px sans-serif;margin-bottom:12px}td,th{border:1px solid #ccc;padding:4px 8px;vertical-align:top}th{background:#eee}</style><p><b>{{count}}</b> results</p><table><tr><th>Title</th><th>Year</th><th>Format</th><th>Organisation</th><th>Image</th></tr>{{#each rows}}<tr>{{#each this}}<td>{{{this}}}</td>{{/each}}</tr>{{/each}}</table>{{{fac}}}`,{rows,count:j.resultCount,fac});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "★ Subject search (person, place, family)",
+          "id": "167d0f34-c600-4746-bbc0-b891d8988151",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{finna_api}}/search?lookfor={{query}}&type=Subject&limit=50&lng=en-gb&field[]=id&field[]=title&field[]=year&field[]=formats&field[]=buildings&field[]=images&field[]=urls&field[]=subjects&field[]=nonPresenterAuthors",
+              "host": [
+                "{{finna_api}}"
+              ],
+              "path": [
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "lookfor",
+                  "value": "{{query}}",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "type",
+                  "value": "Subject",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "lng",
+                  "value": "en-gb",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "id",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "title",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "year",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "formats",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "buildings",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "images",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "urls",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "subjects",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "nonPresenterAuthors",
+                  "disabled": false,
+                  "description": ""
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status OK',()=>{pm.expect(pm.response.code).to.eql(200);});",
+                  "let j={};try{j=pm.response.json();}catch(e){}",
+                  "const recs=j.records||[];",
+                  "const name=x=>Array.isArray(x)?x.map(v=>v.translated||v.value||v).join('; '):(x||'');",
+                  "const rows=recs.map(r=>[`<a href=\"https://www.finna.fi/Record/${encodeURIComponent(r.id)}\">${(r.title||r.heading||'').slice(0,110)}</a>`,r.year||'',name(r.formats),name(r.buildings),(r.images&&r.images.length)?`<img src=\"https://www.finna.fi${r.images[0]}\" height=\"50\">`:'']);",
+                  "let fac='';if(j.facets){for(const [k,v] of Object.entries(j.facets)){fac+=`<h4>${k}</h4><table>`+v.slice(0,40).map(f=>`<tr><td>${f.translated||f.value}</td><td><code>${f.value}</code></td><td>${f.count}</td></tr>`).join('')+'</table>';}}",
+                  "pm.visualizer.set(`<style>table{border-collapse:collapse;font:13px sans-serif;margin-bottom:12px}td,th{border:1px solid #ccc;padding:4px 8px;vertical-align:top}th{background:#eee}</style><p><b>{{count}}</b> results</p><table><tr><th>Title</th><th>Year</th><th>Format</th><th>Organisation</th><th>Image</th></tr>{{#each rows}}<tr>{{#each this}}<td>{{{this}}}</td>{{/each}}</tr>{{/each}}</table>{{{fac}}}`,{rows,count:j.resultCount,fac});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "★ Date range (1850–1900)",
+          "id": "ea237a5e-76c6-44df-9acb-dbd4c2c11b1a",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{finna_api}}/search?lookfor={{place}}&filter[]=search_daterange_mv:\"[1850 TO 1900]\"&limit=50&lng=en-gb&field[]=id&field[]=title&field[]=year&field[]=formats&field[]=buildings&field[]=images&field[]=urls&field[]=subjects&field[]=nonPresenterAuthors",
+              "host": [
+                "{{finna_api}}"
+              ],
+              "path": [
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "lookfor",
+                  "value": "{{place}}",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "filter[]",
+                  "value": "search_daterange_mv:\"[1850 TO 1900]\"",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "lng",
+                  "value": "en-gb",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "id",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "title",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "year",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "formats",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "buildings",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "images",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "urls",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "subjects",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "nonPresenterAuthors",
+                  "disabled": false,
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Change the years inside [FROM TO]."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status OK',()=>{pm.expect(pm.response.code).to.eql(200);});",
+                  "let j={};try{j=pm.response.json();}catch(e){}",
+                  "const recs=j.records||[];",
+                  "const name=x=>Array.isArray(x)?x.map(v=>v.translated||v.value||v).join('; '):(x||'');",
+                  "const rows=recs.map(r=>[`<a href=\"https://www.finna.fi/Record/${encodeURIComponent(r.id)}\">${(r.title||r.heading||'').slice(0,110)}</a>`,r.year||'',name(r.formats),name(r.buildings),(r.images&&r.images.length)?`<img src=\"https://www.finna.fi${r.images[0]}\" height=\"50\">`:'']);",
+                  "let fac='';if(j.facets){for(const [k,v] of Object.entries(j.facets)){fac+=`<h4>${k}</h4><table>`+v.slice(0,40).map(f=>`<tr><td>${f.translated||f.value}</td><td><code>${f.value}</code></td><td>${f.count}</td></tr>`).join('')+'</table>';}}",
+                  "pm.visualizer.set(`<style>table{border-collapse:collapse;font:13px sans-serif;margin-bottom:12px}td,th{border:1px solid #ccc;padding:4px 8px;vertical-align:top}th{background:#eee}</style><p><b>{{count}}</b> results</p><table><tr><th>Title</th><th>Year</th><th>Format</th><th>Organisation</th><th>Image</th></tr>{{#each rows}}<tr>{{#each this}}<td>{{{this}}}</td>{{/each}}</tr>{{/each}}</table>{{{fac}}}`,{rows,count:j.resultCount,fac});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "★ Photos of a place (images only)",
+          "id": "c8d8e3dd-ff6b-4008-896c-89d4665af54c",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{finna_api}}/search?lookfor={{place}}&filter[]=format:\"0/Image/\"&filter[]=online_boolean:\"1\"&limit=50&lng=en-gb&field[]=id&field[]=title&field[]=year&field[]=formats&field[]=buildings&field[]=images&field[]=urls&field[]=subjects&field[]=nonPresenterAuthors",
+              "host": [
+                "{{finna_api}}"
+              ],
+              "path": [
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "lookfor",
+                  "value": "{{place}}",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "filter[]",
+                  "value": "format:\"0/Image/\"",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "filter[]",
+                  "value": "online_boolean:\"1\"",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "lng",
+                  "value": "en-gb",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "id",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "title",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "year",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "formats",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "buildings",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "images",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "urls",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "subjects",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "nonPresenterAuthors",
+                  "disabled": false,
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Historic photographs, many free-licensed. Thumbnails display in the Visualizer."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status OK',()=>{pm.expect(pm.response.code).to.eql(200);});",
+                  "let j={};try{j=pm.response.json();}catch(e){}",
+                  "const recs=j.records||[];",
+                  "const name=x=>Array.isArray(x)?x.map(v=>v.translated||v.value||v).join('; '):(x||'');",
+                  "const rows=recs.map(r=>[`<a href=\"https://www.finna.fi/Record/${encodeURIComponent(r.id)}\">${(r.title||r.heading||'').slice(0,110)}</a>`,r.year||'',name(r.formats),name(r.buildings),(r.images&&r.images.length)?`<img src=\"https://www.finna.fi${r.images[0]}\" height=\"50\">`:'']);",
+                  "let fac='';if(j.facets){for(const [k,v] of Object.entries(j.facets)){fac+=`<h4>${k}</h4><table>`+v.slice(0,40).map(f=>`<tr><td>${f.translated||f.value}</td><td><code>${f.value}</code></td><td>${f.count}</td></tr>`).join('')+'</table>';}}",
+                  "pm.visualizer.set(`<style>table{border-collapse:collapse;font:13px sans-serif;margin-bottom:12px}td,th{border:1px solid #ccc;padding:4px 8px;vertical-align:top}th{background:#eee}</style><p><b>{{count}}</b> results</p><table><tr><th>Title</th><th>Year</th><th>Format</th><th>Organisation</th><th>Image</th></tr>{{#each rows}}<tr>{{#each this}}<td>{{{this}}}</td>{{/each}}</tr>{{/each}}</table>{{{fac}}}`,{rows,count:j.resultCount,fac});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "★ Finnish Heritage Agency (Museovirasto) collections",
+          "id": "55d1b013-7599-4c80-bac0-cdf9934e70ec",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{finna_api}}/search?lookfor={{place}}&filter[]=building:\"0/Museovirasto/\"&limit=50&lng=en-gb&field[]=id&field[]=title&field[]=year&field[]=formats&field[]=buildings&field[]=images&field[]=urls&field[]=subjects&field[]=nonPresenterAuthors",
+              "host": [
+                "{{finna_api}}"
+              ],
+              "path": [
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "lookfor",
+                  "value": "{{place}}",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "filter[]",
+                  "value": "building:\"0/Museovirasto/\"",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "lng",
+                  "value": "en-gb",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "id",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "title",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "year",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "formats",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "buildings",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "images",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "urls",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "subjects",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "nonPresenterAuthors",
+                  "disabled": false,
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Museovirasto: about 380k records, including historic photo archives."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status OK',()=>{pm.expect(pm.response.code).to.eql(200);});",
+                  "let j={};try{j=pm.response.json();}catch(e){}",
+                  "const recs=j.records||[];",
+                  "const name=x=>Array.isArray(x)?x.map(v=>v.translated||v.value||v).join('; '):(x||'');",
+                  "const rows=recs.map(r=>[`<a href=\"https://www.finna.fi/Record/${encodeURIComponent(r.id)}\">${(r.title||r.heading||'').slice(0,110)}</a>`,r.year||'',name(r.formats),name(r.buildings),(r.images&&r.images.length)?`<img src=\"https://www.finna.fi${r.images[0]}\" height=\"50\">`:'']);",
+                  "let fac='';if(j.facets){for(const [k,v] of Object.entries(j.facets)){fac+=`<h4>${k}</h4><table>`+v.slice(0,40).map(f=>`<tr><td>${f.translated||f.value}</td><td><code>${f.value}</code></td><td>${f.count}</td></tr>`).join('')+'</table>';}}",
+                  "pm.visualizer.set(`<style>table{border-collapse:collapse;font:13px sans-serif;margin-bottom:12px}td,th{border:1px solid #ccc;padding:4px 8px;vertical-align:top}th{background:#eee}</style><p><b>{{count}}</b> results</p><table><tr><th>Title</th><th>Year</th><th>Format</th><th>Organisation</th><th>Image</th></tr>{{#each rows}}<tr>{{#each this}}<td>{{{this}}}</td>{{/each}}</tr>{{/each}}</table>{{{fac}}}`,{rows,count:j.resultCount,fac});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "★ Swedish Literature Society (SLS) archives",
+          "id": "a0cd7052-4a8e-4928-9d40-6fe0f1b18751",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{finna_api}}/search?lookfor={{query}}&filter[]=building:\"0/SLS/\"&limit=50&lng=en-gb&field[]=id&field[]=title&field[]=year&field[]=formats&field[]=buildings&field[]=images&field[]=urls&field[]=subjects&field[]=nonPresenterAuthors",
+              "host": [
+                "{{finna_api}}"
+              ],
+              "path": [
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "lookfor",
+                  "value": "{{query}}",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "filter[]",
+                  "value": "building:\"0/SLS/\"",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "lng",
+                  "value": "en-gb",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "id",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "title",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "year",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "formats",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "buildings",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "images",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "urls",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "subjects",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "nonPresenterAuthors",
+                  "disabled": false,
+                  "description": ""
+                }
+              ]
+            },
+            "description": "SLS archives cover Swedish-speaking Finland: letters, folklore and family papers."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status OK',()=>{pm.expect(pm.response.code).to.eql(200);});",
+                  "let j={};try{j=pm.response.json();}catch(e){}",
+                  "const recs=j.records||[];",
+                  "const name=x=>Array.isArray(x)?x.map(v=>v.translated||v.value||v).join('; '):(x||'');",
+                  "const rows=recs.map(r=>[`<a href=\"https://www.finna.fi/Record/${encodeURIComponent(r.id)}\">${(r.title||r.heading||'').slice(0,110)}</a>`,r.year||'',name(r.formats),name(r.buildings),(r.images&&r.images.length)?`<img src=\"https://www.finna.fi${r.images[0]}\" height=\"50\">`:'']);",
+                  "let fac='';if(j.facets){for(const [k,v] of Object.entries(j.facets)){fac+=`<h4>${k}</h4><table>`+v.slice(0,40).map(f=>`<tr><td>${f.translated||f.value}</td><td><code>${f.value}</code></td><td>${f.count}</td></tr>`).join('')+'</table>';}}",
+                  "pm.visualizer.set(`<style>table{border-collapse:collapse;font:13px sans-serif;margin-bottom:12px}td,th{border:1px solid #ccc;padding:4px 8px;vertical-align:top}th{background:#eee}</style><p><b>{{count}}</b> results</p><table><tr><th>Title</th><th>Year</th><th>Format</th><th>Organisation</th><th>Image</th></tr>{{#each rows}}<tr>{{#each this}}<td>{{{this}}}</td>{{/each}}</tr>{{/each}}</table>{{{fac}}}`,{rows,count:j.resultCount,fac});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Facets: formats & organisations",
+          "id": "bbd00c45-1e10-41c7-a082-e524f4dfb8f6",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{finna_api}}/search?lookfor={{query}}&limit=0&facet[]=format&facet[]=building&lng=en-gb",
+              "host": [
+                "{{finna_api}}"
+              ],
+              "path": [
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "lookfor",
+                  "value": "{{query}}",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "0",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "facet[]",
+                  "value": "format",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "facet[]",
+                  "value": "building",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "lng",
+                  "value": "en-gb",
+                  "disabled": false,
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Counts only. Use the value codes in filter[]."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status OK',()=>{pm.expect(pm.response.code).to.eql(200);});",
+                  "let j={};try{j=pm.response.json();}catch(e){}",
+                  "const recs=j.records||[];",
+                  "const name=x=>Array.isArray(x)?x.map(v=>v.translated||v.value||v).join('; '):(x||'');",
+                  "const rows=recs.map(r=>[`<a href=\"https://www.finna.fi/Record/${encodeURIComponent(r.id)}\">${(r.title||r.heading||'').slice(0,110)}</a>`,r.year||'',name(r.formats),name(r.buildings),(r.images&&r.images.length)?`<img src=\"https://www.finna.fi${r.images[0]}\" height=\"50\">`:'']);",
+                  "let fac='';if(j.facets){for(const [k,v] of Object.entries(j.facets)){fac+=`<h4>${k}</h4><table>`+v.slice(0,40).map(f=>`<tr><td>${f.translated||f.value}</td><td><code>${f.value}</code></td><td>${f.count}</td></tr>`).join('')+'</table>';}}",
+                  "pm.visualizer.set(`<style>table{border-collapse:collapse;font:13px sans-serif;margin-bottom:12px}td,th{border:1px solid #ccc;padding:4px 8px;vertical-align:top}th{background:#eee}</style><p><b>{{count}}</b> results</p><table><tr><th>Title</th><th>Year</th><th>Format</th><th>Organisation</th><th>Image</th></tr>{{#each rows}}<tr>{{#each this}}<td>{{{this}}}</td>{{/each}}</tr>{{/each}}</table>{{{fac}}}`,{rows,count:j.resultCount,fac});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Find an organisation code (facetFilter)",
+          "id": "fa1bbec3-076a-4991-91a4-996ed1bef075",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{finna_api}}/search?lookfor=*&limit=0&facet[]=building&facetFilter[]=building:.*(arkisto|Arkisto).*&lng=fi",
+              "host": [
+                "{{finna_api}}"
+              ],
+              "path": [
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "lookfor",
+                  "value": "*",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "0",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "facet[]",
+                  "value": "building",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "facetFilter[]",
+                  "value": "building:.*(arkisto|Arkisto).*",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "lng",
+                  "value": "fi",
+                  "disabled": false,
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Lists organisations whose names match a regex, e.g. local archives (arkisto) or museums (museo)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status OK',()=>{pm.expect(pm.response.code).to.eql(200);});",
+                  "let j={};try{j=pm.response.json();}catch(e){}",
+                  "const recs=j.records||[];",
+                  "const name=x=>Array.isArray(x)?x.map(v=>v.translated||v.value||v).join('; '):(x||'');",
+                  "const rows=recs.map(r=>[`<a href=\"https://www.finna.fi/Record/${encodeURIComponent(r.id)}\">${(r.title||r.heading||'').slice(0,110)}</a>`,r.year||'',name(r.formats),name(r.buildings),(r.images&&r.images.length)?`<img src=\"https://www.finna.fi${r.images[0]}\" height=\"50\">`:'']);",
+                  "let fac='';if(j.facets){for(const [k,v] of Object.entries(j.facets)){fac+=`<h4>${k}</h4><table>`+v.slice(0,40).map(f=>`<tr><td>${f.translated||f.value}</td><td><code>${f.value}</code></td><td>${f.count}</td></tr>`).join('')+'</table>';}}",
+                  "pm.visualizer.set(`<style>table{border-collapse:collapse;font:13px sans-serif;margin-bottom:12px}td,th{border:1px solid #ccc;padding:4px 8px;vertical-align:top}th{background:#eee}</style><p><b>{{count}}</b> results</p><table><tr><th>Title</th><th>Year</th><th>Format</th><th>Organisation</th><th>Image</th></tr>{{#each rows}}<tr>{{#each this}}<td>{{{this}}}</td>{{/each}}</tr>{{/each}}</table>{{{fac}}}`,{rows,count:j.resultCount,fac});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": ""
+    },
+    {
+      "name": "Records",
+      "id": "bb79bb8b-7fce-4e37-aaa7-ef025548a70a",
+      "item": [
+        {
+          "name": "Get record",
+          "id": "eaf1d8bc-de0b-4954-9383-4383099c6236",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{finna_api}}/record?id={{record_id}}&field[]=id&field[]=title&field[]=year&field[]=formats&field[]=buildings&field[]=images&field[]=urls&field[]=subjects&field[]=nonPresenterAuthors&lng=en-gb",
+              "host": [
+                "{{finna_api}}"
+              ],
+              "path": [
+                "record"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{record_id}}",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "id",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "title",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "year",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "formats",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "buildings",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "images",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "urls",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "subjects",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "nonPresenterAuthors",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "lng",
+                  "value": "en-gb",
+                  "disabled": false,
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Get one record by its id from search results (web page: https://www.finna.fi/Record/{id})."
+          },
+          "response": []
+        },
+        {
+          "name": "Get record — full metadata",
+          "id": "58967325-2246-43fc-bd80-dfa503e1f04a",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{finna_api}}/record?id={{record_id}}&field[]=fullRecord&field[]=rawData&field[]=title",
+              "host": [
+                "{{finna_api}}"
+              ],
+              "path": [
+                "record"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{record_id}}",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "fullRecord",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "rawData",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "title",
+                  "disabled": false,
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Returns the original source record (MARC, LIDO or EAD)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get several records",
+          "id": "2461a81d-be08-4e57-a4a6-1d492b0b97e4",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{finna_api}}/record?id[]={{record_id}}&id[]={{record_id_2}}&field[]=id&field[]=title&field[]=year",
+              "host": [
+                "{{finna_api}}"
+              ],
+              "path": [
+                "record"
+              ],
+              "query": [
+                {
+                  "key": "id[]",
+                  "value": "{{record_id}}",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "id[]",
+                  "value": "{{record_id_2}}",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "id",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "title",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "field[]",
+                  "value": "year",
+                  "disabled": false,
+                  "description": ""
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ],
+      "description": ""
+    },
+    {
+      "name": "Authorities",
+      "id": "78a2d8cd-06bd-4efe-a3a3-fdf69e436a4f",
+      "item": [
+        {
+          "name": "Authority search (people, families, organisations)",
+          "id": "234a7da8-a1e3-467a-81fd-c4efcdec4a8b",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{finna_api}}/authority/search?lookfor={{person}}&limit=20&lng=en-gb",
+              "host": [
+                "{{finna_api}}"
+              ],
+              "path": [
+                "authority",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "lookfor",
+                  "value": "{{person}}",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "lng",
+                  "value": "en-gb",
+                  "disabled": false,
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Name authority records: persons, families and corporate bodies."
+          },
+          "response": []
+        },
+        {
+          "name": "Authority record",
+          "id": "213f89f7-ed90-41ca-a3db-bbaa2df10e2d",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{finna_api}}/authority/record?id={{authority_id}}&lng=en-gb",
+              "host": [
+                "{{finna_api}}"
+              ],
+              "path": [
+                "authority",
+                "record"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{authority_id}}",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "lng",
+                  "value": "en-gb",
+                  "disabled": false,
+                  "description": ""
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ],
+      "description": ""
+    },
+    {
+      "name": "Lists",
+      "id": "8715821e-003f-4ca5-8d49-306ec9aebbdd",
+      "item": [
+        {
+          "name": "Public user list",
+          "id": "2e839624-d99d-4ee2-b153-8f3c69764910",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{finna_api}}/list?id={{list_id}}&limit=50",
+              "host": [
+                "{{finna_api}}"
+              ],
+              "path": [
+                "list"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{list_id}}",
+                  "disabled": false,
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "disabled": false,
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Records in a public Finna list. The list id is in the list URL on finna.fi."
+          },
+          "response": []
+        }
+      ],
+      "description": ""
+    }
+  ],
+  "variable": [
+    {
+      "key": "finna_api",
+      "value": "https://api.finna.fi/v1",
+      "type": "string"
+    },
+    {
+      "key": "query",
+      "value": "Bukovsky",
+      "type": "string"
+    },
+    {
+      "key": "person",
+      "value": "Lönnrot, Elias",
+      "type": "string"
+    },
+    {
+      "key": "place",
+      "value": "Viipuri",
+      "type": "string"
+    },
+    {
+      "key": "record_id",
+      "value": "narc.VAKKA-290981.KA_VAKKA-1018894.KA",
+      "type": "string"
+    },
+    {
+      "key": "record_id_2",
+      "value": "erkki.1894",
+      "type": "string"
+    },
+    {
+      "key": "authority_id",
+      "value": "ahaa-eac.EAC_2022113969",
+      "type": "string"
+    },
+    {
+      "key": "list_id",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
